@@ -6,6 +6,10 @@ import (
 	_ "github.com/cznic/ql/driver"
 )
 
+//CtxKey is the key which is used to store the *sql.DB instance inside
+//context.Context.
+const CtxKey = "_db"
+
 const migrationSQL = `
 BEGIN TRANSACTION ;
 	CREATE TABLE IF NOT EXISTS dongles(
