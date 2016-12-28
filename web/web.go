@@ -67,6 +67,8 @@ func PrepCtx(ql *sql.DB, s *events.Stream) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), db.CtxKey, ql)
 			ctx = context.WithValue(ctx, evtCtxKey, s)
+			r = r.WithContext(ctx)
+			h.ServeHTTP(w, r)
 		})
 	}
 }
