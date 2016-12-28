@@ -1,4 +1,4 @@
-package devices
+package db
 
 import (
 	"database/sql"

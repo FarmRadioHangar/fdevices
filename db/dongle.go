@@ -1,4 +1,4 @@
-package devices
+package db
 
 //Dongle holds information about device dongles. This relies on combination from
 //the information provided by udev and information that is gathered by talking
