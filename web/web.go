@@ -24,7 +24,8 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	ql, ok := r.Context().Value(db.CtxKey).(*sql.DB)
+	ctx := r.Context()
+	ql, ok := ctx.Value(db.CtxKey).(*sql.DB)
 	if !ok {
 		// Log something and return?
 		return
@@ -35,7 +36,7 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = ws.WriteJSON(dongles)
-	stream, ok := r.Context().Value(evtCtxKey).(*events.Stream)
+	stream, ok := ctx.Value(evtCtxKey).(*events.Stream)
 	if !ok {
 		// Log something and return?
 		return
@@ -49,15 +50,20 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
-	reader(ws)
+	reader(ctx, ws)
 }
 
-func reader(ws *websocket.Conn) {
+func reader(ctx context.Context, ws *websocket.Conn) {
 	defer ws.Close()
 	for {
-		_, _, err := ws.ReadMessage()
-		if err != nil {
-			log.Println(err)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			_, _, err := ws.ReadMessage()
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 }
