@@ -51,3 +51,15 @@ func DB() (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
+	return nil, nil
+}
+
+func AddDongle(db *sql.DB, d *Dongle) error {
+	return nil
+}
+
+func RemoveDongle(db *sql.DB, d *Dongle) error {
+	return nil
+}
