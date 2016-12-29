@@ -19,7 +19,7 @@ func main() {
 		{
 			Name:    "server",
 			Aliases: []string{"s"},
-			Usage:   "Starts a server that listens to udev vents",
+			Usage:   "Starts a server that listens to udev events",
 			Action:  Server,
 		},
 	}
