@@ -41,8 +41,8 @@ type Manager struct {
 }
 
 // New returns a new Manager instance
-func New() *Manager {
-	return &Manager{}
+func New(s *events.Stream) *Manager {
+	return &Manager{stream: s}
 }
 
 // Init initializes the manager. This involves creating a new goroutine to watch
