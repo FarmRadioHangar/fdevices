@@ -51,7 +51,7 @@ func New(s *events.Stream) *Manager {
 // The only interesting device actions are add and reomove for adding and
 // removing devices respctively.
 
-func (m *Manager) run(ctx context.Context) error {
+func (m *Manager) Run(ctx context.Context) error {
 	u := udev.Udev{}
 	monitor := u.NewMonitorFromNetlink("udev")
 	monitor.FilterAddMatchTag("systemd")
