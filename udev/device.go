@@ -137,6 +137,7 @@ func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 		if err != nil {
 			return nil, err
 		}
+		defer conn.Close()
 		modem, err := NewModem(ctx, conn)
 		if err != nil {
 			return nil, err
