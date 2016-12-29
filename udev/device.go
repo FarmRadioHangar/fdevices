@@ -1,4 +1,4 @@
-package device
+package udev
 
 import (
 	"bytes"
