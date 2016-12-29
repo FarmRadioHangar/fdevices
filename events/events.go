@@ -18,5 +18,9 @@ func (s *Stream) Channel() <-chan *Event {
 }
 
 func (s *Stream) Send(evt *Event) {
+	go s.send(evt)
+}
+
+func (s *Stream) send(evt *Event) {
 	s.evts <- evt
 }

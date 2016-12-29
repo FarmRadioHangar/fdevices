@@ -5,6 +5,7 @@ package db
 //to the device serial port directly.
 type Dongle struct {
 	IMEI        string
+	IMSI        string
 	Path        string
 	IsSymlinked bool
 	Properties  map[string]string
