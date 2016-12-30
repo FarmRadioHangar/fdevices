@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 	// load ql drier
 	_ "github.com/cznic/ql/driver"
 )
@@ -24,6 +25,20 @@ BEGIN TRANSACTION ;
 		CREATE UNIQUE INDEX UQE_dongels on dongles(path);
 COMMIT;
 `
+
+//Dongle holds information about device dongles. This relies on combination from
+//the information provided by udev and information that is gathered by talking
+//to the device serial port directly.
+type Dongle struct {
+	IMEI        string
+	IMSI        string
+	Path        string
+	IsSymlinked bool
+	Properties  map[string]string
+
+	CreatedOn time.Time
+	UpdatedOn time.Time
+}
 
 //Migration creates necessary database tables if they aint created yet.
 func Migration(db *sql.DB) error {
