@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/FarmRadioHangar/devices/db"
 	"github.com/FarmRadioHangar/devices/events"
@@ -22,6 +24,10 @@ func main() {
 			Usage:   "Starts a server that listens to udev events",
 			Action:  Server,
 		},
+	}
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
