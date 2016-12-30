@@ -125,6 +125,7 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	if err != nil {
 		return err
 	}
+	modem.Properties = d.Properties()
 	e := &events.Event{Name: "add", Data: modem}
 	m.stream.Send(e)
 	fmt.Println("found ", *modem)
