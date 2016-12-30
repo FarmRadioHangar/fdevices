@@ -1,6 +1,9 @@
 package db
 
-import "testing"
+import (
+	"database/sql"
+	"testing"
+)
 
 func TestDb(t *testing.T) {
 	q, err := DB()
@@ -50,5 +53,14 @@ func TestDb(t *testing.T) {
 	}
 	if len(a) != len(sample) {
 		t.Errorf("expected %d got %d", len(sample), len(a))
+	}
+
+	err = RemoveDongle(q, a[0])
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = GetDongle(q, a[0].Path)
+	if err != sql.ErrNoRows {
+		t.Error("expected %v got %v", sql.ErrNoRows, err)
 	}
 }
