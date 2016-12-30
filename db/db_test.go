@@ -44,4 +44,11 @@ func TestDb(t *testing.T) {
 			}
 		}
 	}
+	a, err := GetAllDongles(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(a) != len(sample) {
+		t.Errorf("expected %d got %d", len(sample), len(a))
+	}
 }
