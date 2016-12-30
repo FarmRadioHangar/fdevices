@@ -3,6 +3,7 @@ package udev
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -37,12 +38,13 @@ var modemCommands = struct {
 // This is safe to use concurrently in multiple goroutines
 type Manager struct {
 	monitor *udev.Monitor
+	db      *sql.DB
 	stream  *events.Stream
 }
 
 // New returns a new Manager instance
-func New(s *events.Stream) *Manager {
-	return &Manager{stream: s}
+func New(db *sql.DB, s *events.Stream) *Manager {
+	return &Manager{stream: s, db: db}
 }
 
 // Init initializes the manager. This involves creating a new goroutine to watch
