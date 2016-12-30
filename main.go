@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +23,14 @@ func main() {
 			Name:    "server",
 			Aliases: []string{"s"},
 			Usage:   "Starts a server that listens to udev events",
-			Action:  Server,
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "port",
+					Usage: "ports to bind the server",
+					Value: 8090,
+				},
+			},
+			Action: Server,
 		},
 	}
 	err := app.Run(os.Args)
@@ -44,5 +52,7 @@ func Server(cxt *cli.Context) error {
 
 	defer cancel()
 	w := web.New(ql, s)
-	return http.ListenAndServe(":1000", w)
+	port := cxt.Int("port")
+	fmt.Println("listening on port :", port)
+	return http.ListenAndServe(fmt.Sprintf(":%d", port), w)
 }
