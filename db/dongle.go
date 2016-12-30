@@ -1,5 +1,7 @@
 package db
 
+import "time"
+
 //Dongle holds information about device dongles. This relies on combination from
 //the information provided by udev and information that is gathered by talking
 //to the device serial port directly.
@@ -9,4 +11,7 @@ type Dongle struct {
 	Path        string
 	IsSymlinked bool
 	Properties  map[string]string
+
+	CreatedOn time.Time
+	UpdatedOn time.Time
 }

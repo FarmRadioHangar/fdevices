@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	// load ql drier
 	_ "github.com/cznic/ql/driver"
 )
@@ -20,8 +21,7 @@ BEGIN TRANSACTION ;
 		created_on time,
 		updated_on time);
 
-
-		CREATE UNIQUE INDEX UQE_dongels on dongles(imei,imsi);
+		CREATE UNIQUE INDEX UQE_dongels on dongles(path);
 COMMIT;
 `
 
@@ -53,13 +53,111 @@ func DB() (*sql.DB, error) {
 }
 
 func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
-	return nil, nil
+	query := "select * from dongles"
+	var rst []*Dongle
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		d := &Dongle{}
+		var prop []byte
+		err := rows.Scan(
+			&d.IMEI,
+			&d.IMSI,
+			&d.Path,
+			&prop,
+			&d.CreatedOn,
+			&d.UpdatedOn,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if prop != nil {
+			err = json.Unmarshal(prop, &d.Properties)
+			if err != nil {
+				return nil, err
+			}
+		}
+		rst = append(rst, d)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return rst, nil
 }
 
-func AddDongle(db *sql.DB, d *Dongle) error {
-	return nil
+func CreateDongle(db *sql.DB, d *Dongle) error {
+	query := `
+	BEGIN TRANSACTION;
+	  INSERT INTO dongles  (imei,imsi,path,properties,created_on,updated_on)
+		VALUES ($1,$2,$3,$4,now(),now());
+	COMMIT;
+	`
+	var prop []byte
+	var err error
+	if d.Properties != nil {
+		prop, err = json.Marshal(d.Properties)
+		if err != nil {
+			return err
+		}
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, prop)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func RemoveDongle(db *sql.DB, d *Dongle) error {
+	var query = `
+BEGIN TRANSACTION;
+   DELETE FROM dongles
+  WHERE imei=$1&&path=$2;
+COMMIT;
+	`
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(query, d.IMEI, d.Path)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 	return nil
+}
+
+func GetDongle(db *sql.DB, path string) (*Dongle, error) {
+	var query = `
+	SELECT * from dongles  WHERE path=$1 LIMIT 1;
+	`
+	d := &Dongle{}
+	var prop []byte
+	err := db.QueryRow(query, path).Scan(
+		&d.IMEI,
+		&d.IMSI,
+		&d.Path,
+		&prop,
+		&d.CreatedOn,
+		&d.UpdatedOn,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if prop != nil {
+		err = json.Unmarshal(prop, &d.Properties)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return d, nil
 }
