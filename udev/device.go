@@ -93,7 +93,7 @@ func (m *Manager) Run(ctx context.Context) error {
 
 func (m *Manager) RemoveDevice(ctx context.Context, dpath string) {
 }
-func (m *Manager) startup(ctx context.Context) {
+func (m *Manager) Startup(ctx context.Context) {
 	u := udev.Udev{}
 	e := u.NewEnumerate()
 	e.AddMatchIsInitialized()
@@ -125,6 +125,7 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	}
 	e := &events.Event{Name: "add", Data: modem}
 	m.stream.Send(e)
+	fmt.Println("found ", *modem)
 	return nil
 }
 
