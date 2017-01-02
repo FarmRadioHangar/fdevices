@@ -138,6 +138,16 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	return nil
 }
 
+//FindDongle thic=s checks if the udev Device is a donge. We are only interested
+//in dongle that we can communicate with via serial port.
+//
+// For a plugged in 3g dongle, three devices are seen by udev. They are
+// registered in three different tty. For isntance tty0,tty1,tty2. It is not
+// obvious to know which is the command tty.
+//
+// Only two tty's are candidates for the command dongle. The criteria of picking
+// the right candidate is based on whether we can get IMEI and IMSI number from
+// the tty.
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
