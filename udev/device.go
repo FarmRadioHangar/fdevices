@@ -132,7 +132,9 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("found ", *modem)
+	fmt.Printf("found dongle imei:%s imsi:%s path:%s \n",
+		modem.IMEI, modem.IMSI, modem.Path,
+	)
 	return nil
 }
 
@@ -174,6 +176,11 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 	m.IMEI = imei
 	m.IMSI = imsi
 	m.Path = c.device.Name
+	i, err := getttyNum(m.Path)
+	if err != nil {
+		return nil, err
+	}
+	m.TTY = i
 	return m, nil
 }
 
