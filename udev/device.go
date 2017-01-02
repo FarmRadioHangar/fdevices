@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -135,7 +137,33 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	fmt.Printf("found dongle imei:%s imsi:%s path:%s \n",
 		modem.IMEI, modem.IMSI, modem.Path,
 	)
+	go m.Symlink(modem)
 	return nil
+}
+func (m *Manager) symlink(d *db.Dongle) {
+	n := fmt.Sprintf("/dev/%s.imei", d.IMEI)
+	_ = syscall.Unlink(n)
+	err := os.Symlink(d.Path, n)
+	if err != nil {
+		fmt.Printf("devices-symlinks :  %v \n", err)
+		return
+	}
+	fmt.Printf("device-symlink: %s --> %s\n", n, d.Path)
+	i := fmt.Sprintf("/dev/%s.imsi", d.IMSI)
+	_ = syscall.Unlink(i)
+	err = os.Symlink(d.Path, i)
+	if err != nil {
+		fmt.Printf("devices-symlinks :  %v \n", err)
+	}
+	fmt.Printf("device-symlink: %s --> %s\n", i, d.Path)
+}
+
+func (m *Manager) Symlink(d *db.Dongle) {
+	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
+	if err != nil {
+		return
+	}
+	m.symlink(c)
 }
 
 //FindDongle thic=s checks if the udev Device is a donge. We are only interested
