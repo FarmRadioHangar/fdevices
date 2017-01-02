@@ -18,6 +18,7 @@ BEGIN TRANSACTION ;
 		imei string,
 		imsi string,
 		path string,
+		tty  int,
 		properties blob,
 		created_on time,
 		updated_on time);
@@ -34,6 +35,7 @@ type Dongle struct {
 	IMSI        string
 	Path        string
 	IsSymlinked bool
+	TTY         int
 	Properties  map[string]string
 
 	CreatedOn time.Time
@@ -82,6 +84,7 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 			&d.IMEI,
 			&d.IMSI,
 			&d.Path,
+			&d.TTY,
 			&prop,
 			&d.CreatedOn,
 			&d.UpdatedOn,
@@ -106,8 +109,8 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 func CreateDongle(db *sql.DB, d *Dongle) error {
 	query := `
 	BEGIN TRANSACTION;
-	  INSERT INTO dongles  (imei,imsi,path,properties,created_on,updated_on)
-		VALUES ($1,$2,$3,$4,now(),now());
+	  INSERT INTO dongles  (imei,imsi,path,tty,properties,created_on,updated_on)
+		VALUES ($1,$2,$3,$4,$5,now(),now());
 	COMMIT;
 	`
 	var prop []byte
@@ -123,7 +126,7 @@ func CreateDongle(db *sql.DB, d *Dongle) error {
 		return err
 	}
 
-	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, prop)
+	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, d.TTY, prop)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -161,6 +164,7 @@ func GetDongle(db *sql.DB, path string) (*Dongle, error) {
 		&d.IMEI,
 		&d.IMSI,
 		&d.Path,
+		&d.TTY,
 		&prop,
 		&d.CreatedOn,
 		&d.UpdatedOn,
