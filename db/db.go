@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 	// load ql drier
 	_ "github.com/cznic/ql/driver"
@@ -179,4 +180,16 @@ func GetDongle(db *sql.DB, path string) (*Dongle, error) {
 		}
 	}
 	return d, nil
+}
+
+func GetSymlinkCandidate(db *sql.DB, imei string) (*Dongle, error) {
+	query := "select  min(tty) from dongles where imei=$1 "
+	var tty int
+	err := db.QueryRow(query, imei).Scan(&tty)
+	if err != nil {
+
+		return nil, err
+	}
+	path := fmt.Sprintf("/dev/ttyUSB%d", tty)
+	return GetDongle(db, path)
 }
