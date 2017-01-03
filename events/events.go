@@ -19,7 +19,10 @@ type Stream struct {
 }
 
 func NewStream(size int) *Stream {
-	return &Stream{evts: make(chan *Event, size)}
+	return &Stream{
+		evts: make(chan *Event, size),
+		subs: make(map[string]chan *Event),
+	}
 }
 
 func (s *Stream) Subscribe() (string, <-chan *Event) {
