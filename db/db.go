@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 	// load ql drier
 	_ "github.com/cznic/ql/driver"
@@ -43,6 +44,12 @@ type Dongle struct {
 	CreatedOn time.Time `json:"-"`
 	UpdatedOn time.Time `json:"-"`
 }
+
+type Dongles []*Dongle
+
+func (a Dongles) Len() int           { return len(a) }
+func (a Dongles) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a Dongles) Less(i, j int) bool { return a[i].TTY < a[j].TTY }
 
 //Migration creates necessary database tables if they aint created yet.
 func Migration(db *sql.DB) error {
@@ -110,43 +117,28 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 }
 
 func GetDistinc(db *sql.DB) ([]*Dongle, error) {
-	query := `select distinc  imei,imsi, path,symlink, min(tty) AS tty,properties,
-	created_on,updated on from dongles;
-	`
-	var rst []*Dongle
-	rows, err := db.Query(query)
+	s := make(map[string]Dongles)
+	a, err := GetAllDongles(db)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		d := &Dongle{}
-		var prop []byte
-		err := rows.Scan(
-			&d.IMEI,
-			&d.IMSI,
-			&d.Path,
-			&d.IsSymlinked,
-			&d.TTY,
-			&prop,
-			&d.CreatedOn,
-			&d.UpdatedOn,
-		)
-		if err != nil {
-			return nil, err
+	fmt.Println(len(a))
+	for k := range a {
+		if v, ok := s[a[k].IMEI]; ok {
+			v = append(v, a[k])
+			s[a[k].IMEI] = v
 		}
-		if prop != nil {
-			err = json.Unmarshal(prop, &d.Properties)
-			if err != nil {
-				return nil, err
-			}
-		}
-		rst = append(rst, d)
+		s[a[k].IMEI] = Dongles{a[k]}
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
+	for k, v := range s {
+		sort.Sort(v)
+		s[k] = v
 	}
-	return rst, nil
+	var out []*Dongle
+	for _, v := range s {
+		out = append(out, v[0])
+	}
+	return out, nil
 }
 
 func CreateDongle(db *sql.DB, d *Dongle) error {

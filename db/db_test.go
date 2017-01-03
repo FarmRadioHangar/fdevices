@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 )
 
@@ -57,6 +58,11 @@ func TestDb(t *testing.T) {
 	if len(a) != len(sample) {
 		t.Errorf("expected %d got %d", len(sample), len(a))
 	}
+	d, err := GetDistinc(q)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println(len(d))
 
 	err = RemoveDongle(q, a[0])
 	if err != nil {
@@ -92,4 +98,22 @@ func TestDb(t *testing.T) {
 		t.Errorf("expected %s got %s", expect, low.TTY)
 	}
 
+	//for i, v := range sample {
+	//v.Path = fmt.Sprintf("%s%d", v.Path, i)
+	//v.TTY++
+	//err = CreateDongle(qq, v)
+	//if err != nil {
+	//t.Error(err)
+	//}
+	//}
+	//a, err = GetAllDongles(qq)
+	//if err != nil {
+	//t.Error(err)
+	//}
+	//fmt.Println(len(a))
+	//d, err = GetDistinc(qq)
+	//if err != nil {
+	//t.Error(err)
+	//}
+	//fmt.Println(len(d))
 }
