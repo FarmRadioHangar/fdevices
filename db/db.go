@@ -109,6 +109,46 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 	return rst, nil
 }
 
+func GetDistinc(db *sql.DB) ([]*Dongle, error) {
+	query := `select distinc  imei,imsi, path,symlink, min(tty) AS tty,properties,
+	created_on,updated on from dongles;
+	`
+	var rst []*Dongle
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		d := &Dongle{}
+		var prop []byte
+		err := rows.Scan(
+			&d.IMEI,
+			&d.IMSI,
+			&d.Path,
+			&d.IsSymlinked,
+			&d.TTY,
+			&prop,
+			&d.CreatedOn,
+			&d.UpdatedOn,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if prop != nil {
+			err = json.Unmarshal(prop, &d.Properties)
+			if err != nil {
+				return nil, err
+			}
+		}
+		rst = append(rst, d)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return rst, nil
+}
+
 func CreateDongle(db *sql.DB, d *Dongle) error {
 	query := `
 	BEGIN TRANSACTION;
