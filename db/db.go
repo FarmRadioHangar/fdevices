@@ -19,6 +19,7 @@ BEGIN TRANSACTION ;
 		imei string,
 		imsi string,
 		path string,
+		symlink bool,
 		tty  int,
 		properties blob,
 		created_on time,
@@ -32,15 +33,15 @@ COMMIT;
 //the information provided by udev and information that is gathered by talking
 //to the device serial port directly.
 type Dongle struct {
-	IMEI        string
-	IMSI        string
-	Path        string
-	IsSymlinked bool
-	TTY         int
-	Properties  map[string]string
+	IMEI        string            `json:"imei"`
+	IMSI        string            `json:"imsi"`
+	Path        string            `json:"path"`
+	IsSymlinked bool              `json:"symlink"`
+	TTY         int               `json:"-"`
+	Properties  map[string]string `json:"properties"`
 
-	CreatedOn time.Time
-	UpdatedOn time.Time
+	CreatedOn time.Time `json:"-"`
+	UpdatedOn time.Time `json:"-"`
 }
 
 //Migration creates necessary database tables if they aint created yet.
@@ -85,6 +86,7 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 			&d.IMEI,
 			&d.IMSI,
 			&d.Path,
+			&d.IsSymlinked,
 			&d.TTY,
 			&prop,
 			&d.CreatedOn,
@@ -110,8 +112,8 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 func CreateDongle(db *sql.DB, d *Dongle) error {
 	query := `
 	BEGIN TRANSACTION;
-	  INSERT INTO dongles  (imei,imsi,path,tty,properties,created_on,updated_on)
-		VALUES ($1,$2,$3,$4,$5,now(),now());
+	  INSERT INTO dongles  (imei,imsi,path,symlink,tty,properties,created_on,updated_on)
+		VALUES ($1,$2,$3,$4,$5,$6,now(),now());
 	COMMIT;
 	`
 	var prop []byte
@@ -127,7 +129,7 @@ func CreateDongle(db *sql.DB, d *Dongle) error {
 		return err
 	}
 
-	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, d.TTY, prop)
+	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, d.IsSymlinked, d.TTY, prop)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -165,6 +167,7 @@ func GetDongle(db *sql.DB, path string) (*Dongle, error) {
 		&d.IMEI,
 		&d.IMSI,
 		&d.Path,
+		&d.IsSymlinked,
 		&d.TTY,
 		&prop,
 		&d.CreatedOn,
