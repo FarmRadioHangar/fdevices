@@ -45,8 +45,10 @@ func Server(cxt *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	m := udev.New(ql, s)
+
 	ctx, cancel := context.WithCancel(context.Background())
+	s.Start(ctx)
+	m := udev.New(ql, s)
 	m.Startup(ctx)
 	go m.Run(ctx)
 

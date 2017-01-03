@@ -30,7 +30,7 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 		// Log something and return?
 		return
 	}
-	dongles, err := db.GetAllDongles(ql)
+	dongles, err := db.GetDistinc(ql)
 	if err != nil {
 		// log something?
 		return
@@ -41,7 +41,8 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 		// Log something and return?
 		return
 	}
-	evts := stream.Channel()
+	ch, evts := stream.Subscribe()
+	defer stream.Unsubscribe(ch)
 	go func() {
 		for {
 			select {
