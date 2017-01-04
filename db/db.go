@@ -175,7 +175,8 @@ func UpdateDongle(db *sql.DB, d *Dongle) error {
 	  UPDATE dongles
 	  imei=$1,imsi=$2 ,path=$3,symlink=$4,
 	  tty=$5,properties=$6,
-	  created_on=$7 ,updated_on=now()
+	  created_on=$7 ,updated_on=now(),
+	  WHERE path=$3;
 	COMMIT;
 	`
 	var prop []byte
