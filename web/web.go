@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -33,7 +34,10 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 	dongles, err := db.GetDistinc(ql)
 	if err != nil {
 		// log something?
-		return
+		fmt.Printf("ERROR: %v\n", err)
+	}
+	if dongles == nil {
+		dongles = []*db.Dongle{}
 	}
 	_ = ws.WriteJSON(dongles)
 	stream, ok := ctx.Value(evtCtxKey).(*events.Stream)
