@@ -129,7 +129,15 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	}
 	modem.Properties = d.Properties()
 	e := &events.Event{Name: "add", Data: modem}
-	m.stream.Send(e)
+	c, err := db.GetSymlinkCandidate(m.db, modem.IMEI)
+	if err != nil {
+		m.stream.Send(e)
+	} else {
+		if modem.TTY < c.TTY {
+			m.stream.Send(e)
+		}
+	}
+
 	err = db.CreateDongle(m.db, modem)
 	if err != nil {
 		fmt.Println(err)
