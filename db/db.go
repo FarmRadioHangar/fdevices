@@ -169,6 +169,36 @@ func CreateDongle(db *sql.DB, d *Dongle) error {
 	return tx.Commit()
 }
 
+func UpdateDongle(db *sql.DB, d *Dongle) error {
+	query := `
+	BEGIN TRANSACTION;
+	  UPDATE dongles
+	  imei=$1,imsi=$2 ,path=$3,symlink=$4,
+	  tty=$5,properties=$6,
+	  created_on=$7 ,updated_on=now()
+	COMMIT;
+	`
+	var prop []byte
+	var err error
+	if d.Properties != nil {
+		prop, err = json.Marshal(d.Properties)
+		if err != nil {
+			return err
+		}
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, d.IsSymlinked, d.TTY, prop, d.CreatedOn)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
 func RemoveDongle(db *sql.DB, d *Dongle) error {
 	var query = `
 BEGIN TRANSACTION;
