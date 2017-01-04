@@ -163,6 +163,14 @@ func (m *Manager) symlink(d *db.Dongle) {
 	if err != nil {
 		fmt.Printf("devices-symlinks :  %v \n", err)
 	}
+	d.IsSymlinked = true
+	err = db.UpdateDongle(m.db, d)
+	if err != nil {
+		fmt.Printf("ERROR; %v \n", err)
+	} else {
+		e := &events.Event{Name: "update", Data: d}
+		m.stream.Send(e)
+	}
 	fmt.Printf("device-symlink: %s --> %s\n", i, d.Path)
 }
 
