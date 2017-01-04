@@ -174,7 +174,9 @@ func (m *Manager) Symlink(d *db.Dongle) {
 	if err != nil {
 		return
 	}
-	m.symlink(c)
+	if !c.IsSymlinked {
+		m.symlink(c)
+	}
 }
 
 //FindDongle thic=s checks if the udev Device is a donge. We are only interested
