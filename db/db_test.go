@@ -11,6 +11,7 @@ func TestDb(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer q.Close()
 
 	sample := []*Dongle{
 		{
@@ -97,23 +98,39 @@ func TestDb(t *testing.T) {
 	if low.TTY != 5 {
 		t.Errorf("expected %s got %s", expect, low.TTY)
 	}
+}
 
-	//for i, v := range sample {
-	//v.Path = fmt.Sprintf("%s%d", v.Path, i)
-	//v.TTY++
-	//err = CreateDongle(qq, v)
-	//if err != nil {
-	//t.Error(err)
-	//}
-	//}
-	//a, err = GetAllDongles(qq)
-	//if err != nil {
-	//t.Error(err)
-	//}
-	//fmt.Println(len(a))
-	//d, err = GetDistinc(qq)
-	//if err != nil {
-	//t.Error(err)
-	//}
-	//fmt.Println(len(d))
+func TestRemoveDongle(t *testing.T) {
+	q, err := dbWIthName("test.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer q.Close()
+	imei := "123456"
+
+	for v := range make([]struct{}, 10) {
+		err = CreateDongle(q, &Dongle{IMEI: imei, Path: fmt.Sprint(v)})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	dongels, err := GetAllDongles(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dongels) != 10 {
+		t.Errorf("expected 10 got %d", len(dongels))
+	}
+	err = RemoveDongle(q, &Dongle{IMEI: imei})
+	if err != nil {
+		t.Fatal(err)
+	}
+	dongels, err = GetAllDongles(q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(dongels) != 0 {
+		t.Errorf("expected 10 got %d", len(dongels))
+	}
+
 }

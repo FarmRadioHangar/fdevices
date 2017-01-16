@@ -67,7 +67,11 @@ func Migration(db *sql.DB) error {
 
 //DB returns a ql backed database, with migrations already performed.
 func DB() (*sql.DB, error) {
-	db, err := sql.Open("ql-mem", "devices.db")
+	return dbWIthName("devices.db")
+}
+
+func dbWIthName(name string) (*sql.DB, error) {
+	db, err := sql.Open("ql-mem", name)
 	if err != nil {
 		return nil, err
 	}
@@ -204,14 +208,14 @@ func RemoveDongle(db *sql.DB, d *Dongle) error {
 	var query = `
 BEGIN TRANSACTION;
    DELETE FROM dongles
-  WHERE imei=$1&&path=$2;
+  WHERE imei=$1;
 COMMIT;
 	`
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(query, d.IMEI, d.Path)
+	_, err = tx.Exec(query, d.IMEI)
 	if err != nil {
 		tx.Rollback()
 		return err
