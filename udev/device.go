@@ -95,7 +95,22 @@ func (m *Manager) Run(ctx context.Context) error {
 
 }
 
-func (m *Manager) RemoveDevice(ctx context.Context, dpath string) {
+func (m *Manager) RemoveDevice(ctx context.Context, dpath string) error {
+	d, err := db.GetDongle(m.db, dpath)
+	if err != nil {
+		return err
+	}
+	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
+	if err != nil {
+		return db.RemoveDongle(m.db, d)
+	}
+	err = db.RemoveDongle(m.db, c)
+	if err != nil {
+		return err
+	}
+	fmt.Println("removed donge", c.IMEI)
+	m.unlink(c)
+	return nil
 }
 func (m *Manager) Startup(ctx context.Context) {
 	u := udev.Udev{}
@@ -169,6 +184,14 @@ func (m *Manager) symlink(d *db.Dongle) {
 	fmt.Printf("device-symlink: %s --> %s\n", i, d.Path)
 }
 
+func (m *Manager) unlink(d *db.Dongle) {
+	n := fmt.Sprintf("/dev/%s.imei", d.IMEI)
+	_ = syscall.Unlink(n)
+	fmt.Printf("device-unlink: %s --> %s\n", n, d.Path)
+	i := fmt.Sprintf("/dev/%s.imsi", d.IMSI)
+	_ = syscall.Unlink(i)
+	fmt.Printf("device-unlink: %s --> %s\n", i, d.Path)
+}
 func (m *Manager) Symlink(d *db.Dongle) {
 	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
 	if err != nil {
