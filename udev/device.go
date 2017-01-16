@@ -275,20 +275,30 @@ func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 }
 
 func getIMEI(c *Conn) (string, error) {
-	o, err := mustExec(10*time.Second, c, "AT+GSN")
+	o, err := mustExec(10*time.Second, c, "ATI")
 	if err != nil {
 		return "", err
 	}
-	i, err := cleanResult(o)
-	if err != nil {
-		return "", err
-	}
-	im := string(i)
+	im := clearIMEI(string(o))
 	if !isNumber(im) {
 		return "", errors.New("IMEI not found")
 	}
 	fmt.Println("imei ", im)
 	return im, nil
+}
+
+func clearIMEI(src string) string {
+	im := "IMEI:"
+	gap := "+GCAP"
+	i := strings.Index(src, im)
+	if i == -1 {
+		return ""
+	}
+	g := strings.Index(src, gap)
+	if i == -1 {
+		return ""
+	}
+	return strings.TrimSpace(src[i+len(im) : g])
 }
 
 func getIMSI(c *Conn) (string, error) {
@@ -310,6 +320,9 @@ func getIMSI(c *Conn) (string, error) {
 }
 
 func isNumber(src string) bool {
+	if src == "" {
+		return false
+	}
 	for _, v := range src {
 		if !unicode.IsDigit(v) {
 			return false
