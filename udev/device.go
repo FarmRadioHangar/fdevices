@@ -191,6 +191,8 @@ func (m *Manager) unlink(d *db.Dongle) {
 	i := fmt.Sprintf("/dev/%s.imsi", d.IMSI)
 	_ = syscall.Unlink(i)
 	fmt.Printf("device-unlink: %s --> %s\n", i, d.Path)
+	e := &events.Event{Name: "remove", Data: d}
+	m.stream.Send(e)
 }
 func (m *Manager) Symlink(d *db.Dongle) {
 	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
