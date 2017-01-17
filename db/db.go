@@ -258,7 +258,7 @@ func GetDongle(db *sql.DB, path string) (*Dongle, error) {
 }
 
 func GetSymlinkCandidate(db *sql.DB, imei string) (*Dongle, error) {
-	query := "select  min(tty) from dongles where imei=$1 "
+	query := `select  min(tty) from dongles where imei=$1&&imsi!="" `
 	var tty int
 	err := db.QueryRow(query, imei).Scan(&tty)
 	if err != nil {

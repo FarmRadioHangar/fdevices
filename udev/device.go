@@ -195,6 +195,9 @@ func (m *Manager) unlink(d *db.Dongle) {
 	m.stream.Send(e)
 }
 func (m *Manager) Symlink(d *db.Dongle) {
+	if d.IMSI == "" {
+		return
+	}
 	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
 	if err != nil {
 		return
@@ -245,10 +248,7 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 	if err != nil {
 		return nil, err
 	}
-	imsi, err := getIMSI(c)
-	if err != nil {
-		return nil, err
-	}
+	imsi, _ := getIMSI(c)
 	m.IMEI = imei
 	m.ATI = ati
 	m.IMSI = imsi
