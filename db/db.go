@@ -22,6 +22,7 @@ BEGIN TRANSACTION ;
 		path string,
 		symlink bool,
 		tty  int,
+		ati string,
 		properties blob,
 		created_on time,
 		updated_on time);
@@ -39,6 +40,7 @@ type Dongle struct {
 	Path        string            `json:"path"`
 	IsSymlinked bool              `json:"symlink"`
 	TTY         int               `json:"-"`
+	ATI         string            `json:"ati"`
 	Properties  map[string]string `json:"properties"`
 
 	CreatedOn time.Time `json:"-"`
@@ -99,6 +101,7 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 			&d.Path,
 			&d.IsSymlinked,
 			&d.TTY,
+			&d.ATI,
 			&prop,
 			&d.CreatedOn,
 			&d.UpdatedOn,
@@ -148,8 +151,8 @@ func GetDistinc(db *sql.DB) ([]*Dongle, error) {
 func CreateDongle(db *sql.DB, d *Dongle) error {
 	query := `
 	BEGIN TRANSACTION;
-	  INSERT INTO dongles  (imei,imsi,path,symlink,tty,properties,created_on,updated_on)
-		VALUES ($1,$2,$3,$4,$5,$6,now(),now());
+	  INSERT INTO dongles  (imei,imsi,path,symlink,tty,ati,properties,created_on,updated_on)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,now(),now());
 	COMMIT;
 	`
 	var prop []byte
@@ -165,7 +168,8 @@ func CreateDongle(db *sql.DB, d *Dongle) error {
 		return err
 	}
 
-	_, err = tx.Exec(query, d.IMEI, d.IMSI, d.Path, d.IsSymlinked, d.TTY, prop)
+	_, err = tx.Exec(query, d.IMEI, d.IMSI,
+		d.Path, d.IsSymlinked, d.TTY, d.ATI, prop)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -236,6 +240,7 @@ func GetDongle(db *sql.DB, path string) (*Dongle, error) {
 		&d.Path,
 		&d.IsSymlinked,
 		&d.TTY,
+		&d.ATI,
 		&prop,
 		&d.CreatedOn,
 		&d.UpdatedOn,
