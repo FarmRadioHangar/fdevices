@@ -16,7 +16,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "0.1.1"
+	app.Version = "0.1.2"
 	app.Usage = "Streams realtime events about devices (Dongles)"
 	app.Commands = []cli.Command{
 		{
