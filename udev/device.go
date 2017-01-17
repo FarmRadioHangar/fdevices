@@ -241,7 +241,7 @@ func getttyNum(tty string) (int, error) {
 
 func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 	m := &db.Dongle{}
-	imei, err := getIMEI(c)
+	imei, ati, err := getIMEI(c)
 	if err != nil {
 		return nil, err
 	}
@@ -250,6 +250,7 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 		return nil, err
 	}
 	m.IMEI = imei
+	m.ATI = ati
 	m.IMSI = imsi
 	m.Path = c.device.Name
 	i, err := getttyNum(m.Path)
@@ -276,17 +277,18 @@ func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 	}
 }
 
-func getIMEI(c *Conn) (string, error) {
+func getIMEI(c *Conn) (string, string, error) {
 	o, err := mustExec(10*time.Second, c, "ATI")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
+	ati := string(o)
 	im := clearIMEI(string(o))
 	if !isNumber(im) {
-		return "", errors.New("IMEI not found")
+		return "", "", errors.New("IMEI not found")
 	}
 	fmt.Println("imei ", im)
-	return im, nil
+	return im, ati, nil
 }
 
 func clearIMEI(src string) string {
