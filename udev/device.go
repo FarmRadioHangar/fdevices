@@ -248,7 +248,10 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 	if err != nil {
 		return nil, err
 	}
-	imsi, _ := getIMSI(c)
+	imsi, err := getIMSI(c)
+	if err != nil {
+		fmt.Println(err)
+	}
 	m.IMEI = imei
 	m.ATI = ati
 	m.IMSI = imsi
@@ -263,17 +266,20 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 
 func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 	ich := time.After(duration)
+	tk := time.NewTicker(3 * time.Second)
+	defer tk.Stop()
 	for {
 		select {
 		case <-ich:
-			return nil, errors.New("timed out")
-		default:
+			return c.Run(cmd)
+		case <-tk.C:
 			rst, err := c.Run(cmd)
 			if err != nil {
 				continue
 			}
 			return rst, nil
 		}
+
 	}
 }
 
@@ -287,7 +293,6 @@ func getIMEI(c *Conn) (string, string, error) {
 	if !isNumber(im) {
 		return "", "", errors.New("IMEI not found")
 	}
-	fmt.Println("imei ", im)
 	return im, ati, nil
 }
 
@@ -318,8 +323,6 @@ func getIMSI(c *Conn) (string, error) {
 	if !isNumber(im) {
 		return "", errors.New("IMSI not found")
 	}
-	fmt.Println("imsi ", im)
-
 	return im, nil
 }
 
@@ -415,7 +418,7 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 		return nil, err
 	}
 	if !bytes.Contains(buf, []byte("OK")) {
-		return nil, errors.New("command " + string(cmd) + " xeite without OK" + " got " + string(buf))
+		return nil, errors.New(string(buf))
 	}
 	_ = c.port.Flush()
 	_ = c.port.Close()
@@ -425,5 +428,5 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 
 // Run helper for Exec that adds \r to the command
 func (c *Conn) Run(cmd string) ([]byte, error) {
-	return c.Exec(fmt.Sprintf("%s \r", cmd))
+	return c.Exec(fmt.Sprintf("%s\r\n", cmd))
 }
