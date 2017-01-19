@@ -85,7 +85,10 @@ func (m *Manager) Run(ctx context.Context) error {
 			case "add":
 				m.AddDevice(ctx, d)
 			case "remove":
-				m.RemoveDevice(ctx, dpath)
+				err := m.RemoveDevice(ctx, dpath)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 		wg.Done()
