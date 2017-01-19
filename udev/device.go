@@ -300,6 +300,10 @@ func getIMEI(c *Conn) (string, string, error) {
 }
 
 func clearIMEI(src string) string {
+	src = strings.TrimSpace(src)
+	if src == "" {
+		return src
+	}
 	im := "IMEI:"
 	gap := "+GCAP"
 	i := strings.Index(src, im)
