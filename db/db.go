@@ -257,6 +257,34 @@ func GetDongle(db *sql.DB, path string) (*Dongle, error) {
 	return d, nil
 }
 
+func GetDongleByIMEI(db *sql.DB, imei string) (*Dongle, error) {
+	var query = `
+	SELECT * from dongles  WHERE imei=$1 LIMIT 1;
+	`
+	d := &Dongle{}
+	var prop []byte
+	err := db.QueryRow(query, imei).Scan(
+		&d.IMEI,
+		&d.IMSI,
+		&d.Path,
+		&d.IsSymlinked,
+		&d.TTY,
+		&d.ATI,
+		&prop,
+		&d.CreatedOn,
+		&d.UpdatedOn,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if prop != nil {
+		err = json.Unmarshal(prop, &d.Properties)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return d, nil
+}
 func GetSymlinkCandidate(db *sql.DB, imei string) (*Dongle, error) {
 	query := `select  min(tty) from dongles where imei=$1&&imsi!="" `
 	var tty int

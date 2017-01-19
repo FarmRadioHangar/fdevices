@@ -146,7 +146,10 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	e := &events.Event{Name: "add", Data: modem}
 	_, err = db.GetSymlinkCandidate(m.db, modem.IMEI)
 	if err != nil {
-		m.stream.Send(e)
+		_, err = db.GetDongleByIMEI(m.db, modem.IMEI)
+		if err != nil {
+			m.stream.Send(e)
+		}
 	}
 	err = db.CreateDongle(m.db, modem)
 	if err != nil {
