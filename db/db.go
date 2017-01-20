@@ -129,6 +129,9 @@ func GetDistinct(db *sql.DB) ([]*Dongle, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(a) == 0 {
+		return a, nil
+	}
 	for k := range a {
 		if v, ok := s[a[k].IMEI]; ok {
 			v = append(v, a[k])
