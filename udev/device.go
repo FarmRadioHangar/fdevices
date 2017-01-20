@@ -325,6 +325,7 @@ func getIMSI(c *Conn) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	fmt.Println(string(o))
 	i, err := cleanResult(o)
 	if err != nil {
 		return "", err
@@ -431,7 +432,6 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 		return nil, errors.New(string(buf))
 	}
 	_ = c.port.Flush()
-	_ = c.port.Close()
 	c.isOpen = false
 	return buf, nil
 }
