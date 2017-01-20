@@ -227,13 +227,7 @@ func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
 		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 10 * time.Second}
-		conn := &Conn{device: cfg}
-		err := conn.Open()
-		if err != nil {
-			return nil, err
-		}
-		defer conn.Close()
-		modem, err := NewModem(ctx, conn)
+		modem, err := NewModem(ctx, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -248,20 +242,20 @@ func getttyNum(tty string) (int, error) {
 	return strconv.Atoi(b)
 }
 
-func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
+func NewModem(ctx context.Context, cfg serial.Config) (*db.Dongle, error) {
 	m := &db.Dongle{}
-	imei, ati, err := getIMEI(c)
+	imei, ati, err := getIMEI(cfg)
 	if err != nil {
 		return nil, err
 	}
-	imsi, err := getIMSI(c)
+	imsi, err := getIMSI(cfg)
 	if err != nil {
 		fmt.Println(err)
 	}
 	m.IMEI = imei
 	m.ATI = ati
 	m.IMSI = imsi
-	m.Path = c.device.Name
+	m.Path = cfg.Name
 	i, err := getttyNum(m.Path)
 	if err != nil {
 		return nil, err
@@ -293,7 +287,13 @@ func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 	}
 }
 
-func getIMEI(c *Conn) (string, string, error) {
+func getIMEI(cfg serial.Config) (string, string, error) {
+	c := &Conn{device: cfg}
+	err := c.Open()
+	if err != nil {
+		return "", "", err
+	}
+	defer c.Close()
 	o, err := c.Run("ATI")
 	if err != nil {
 		return "", "", err
@@ -324,7 +324,13 @@ func clearIMEI(src string) string {
 	return strings.TrimSpace(src[i+len(im) : g])
 }
 
-func getIMSI(c *Conn) (string, error) {
+func getIMSI(cfg serial.Config) (string, error) {
+	c := &Conn{device: cfg}
+	err := c.Open()
+	if err != nil {
+		return "", err
+	}
+	defer c.Close()
 	o, err := c.Run("AT+CIMI")
 	if err != nil {
 		return "", err
