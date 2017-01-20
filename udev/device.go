@@ -448,7 +448,7 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 		return nil, err
 	}
 	buf = bytes.TrimSpace(buf)
-	fmt.Printf("CMD %s: %s\n", cmd, string(buf))
+	fmt.Printf("CMD %s: TTY: %s ==> %s\n", cmd, c.device.Name, string(buf))
 	if !bytes.Contains(buf, []byte("OK")) {
 		return nil, errors.New(string(buf))
 	}
