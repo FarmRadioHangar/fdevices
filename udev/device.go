@@ -325,13 +325,14 @@ func getIMSI(c *Conn) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(string(o))
+
 	i, err := cleanResult(o)
 	if err != nil {
 		return "", err
 	}
 	im := string(i)
 	if !isNumber(im) {
+		fmt.Printf("GETTING IMSI \n%s\n", string(o))
 		return "", errors.New("IMSI not found")
 	}
 	return im, nil
