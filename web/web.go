@@ -31,7 +31,7 @@ func GetDongles(w http.ResponseWriter, r *http.Request) {
 		// Log something and return?
 		return
 	}
-	dongles, err := db.GetDistinc(ql)
+	dongles, err := db.GetDistinct(ql)
 	if err != nil {
 		// log something?
 		fmt.Printf("ERROR: %v\n", err)

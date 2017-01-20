@@ -59,7 +59,7 @@ func TestDb(t *testing.T) {
 	if len(a) != len(sample) {
 		t.Errorf("expected %d got %d", len(sample), len(a))
 	}
-	d, err := GetDistinc(q)
+	d, err := GetDistinct(q)
 	if err != nil {
 		t.Error(err)
 	}

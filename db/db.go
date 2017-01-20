@@ -123,13 +123,12 @@ func GetAllDongles(db *sql.DB) ([]*Dongle, error) {
 	return rst, nil
 }
 
-func GetDistinc(db *sql.DB) ([]*Dongle, error) {
+func GetDistinct(db *sql.DB) ([]*Dongle, error) {
 	s := make(map[string]Dongles)
 	a, err := GetAllDongles(db)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(len(a))
 	for k := range a {
 		if v, ok := s[a[k].IMEI]; ok {
 			v = append(v, a[k])
