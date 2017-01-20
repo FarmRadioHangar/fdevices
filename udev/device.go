@@ -226,7 +226,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 10 * time.Second}
+		cfg := serial.Config{Name: name, Baud: 9600}
 		conn := &Conn{device: cfg}
 		err := conn.Open()
 		if err != nil {
@@ -281,6 +281,7 @@ func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 		case <-tk.C:
 			rst, err := c.Run(cmd)
 			if err != nil {
+				fmt.Printf("%s %s \n %v\n", cmd, c.device.Name, err)
 				continue
 			}
 			return rst, nil
