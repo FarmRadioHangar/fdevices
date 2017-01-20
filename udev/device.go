@@ -272,7 +272,7 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 
 func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 	ich := time.After(duration)
-	tk := time.NewTicker(3 * time.Second)
+	tk := time.NewTicker(time.Second)
 	defer tk.Stop()
 	for {
 		select {
