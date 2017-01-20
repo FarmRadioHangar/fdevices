@@ -226,7 +226,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: time.Second}
+		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 10 * time.Second}
 		conn := &Conn{device: cfg}
 		err := conn.Open()
 		if err != nil {
@@ -294,7 +294,7 @@ func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 }
 
 func getIMEI(c *Conn) (string, string, error) {
-	o, err := mustExec(10*time.Second, c, "ATI")
+	o, err := c.Run("ATI")
 	if err != nil {
 		return "", "", err
 	}
@@ -325,7 +325,7 @@ func clearIMEI(src string) string {
 }
 
 func getIMSI(c *Conn) (string, error) {
-	o, err := mustExec(10*time.Second, c, "AT+CIMI")
+	o, err := c.Run("AT+CIMI")
 	if err != nil {
 		return "", err
 	}
@@ -423,7 +423,12 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 			return nil, err
 		}
 	}
-	_, err := c.Write([]byte(cmd))
+	err := c.Flush()
+	if err != nil {
+		return nil, err
+	}
+	defer c.Flush()
+	_, err = c.Write([]byte(cmd))
 	if err != nil {
 		return nil, err
 	}
@@ -432,15 +437,22 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	buf = bytes.TrimSpace(buf)
+	fmt.Printf("CMD %s: %s\n", cmd, string(buf))
 	if !bytes.Contains(buf, []byte("OK")) {
 		return nil, errors.New(string(buf))
 	}
-	_ = c.port.Flush()
-	c.isOpen = false
 	return buf, nil
 }
 
 // Run helper for Exec that adds \r to the command
 func (c *Conn) Run(cmd string) ([]byte, error) {
 	return c.Exec(fmt.Sprintf("%s\r\n", cmd))
+}
+
+func (c *Conn) Flush() error {
+	if c.isOpen {
+		return c.port.Flush()
+	}
+	return errors.New("can'f flaush a closed port")
 }
