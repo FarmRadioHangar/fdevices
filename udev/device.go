@@ -122,7 +122,10 @@ func (m *Manager) Startup(ctx context.Context) {
 	e.AddMatchTag("systemd")
 	devices, _ := e.Devices()
 	for i := 0; i < len(devices); i++ {
-		m.AddDevice(ctx, devices[i])
+		err := m.AddDevice(ctx, devices[i])
+		if err != nil {
+			fmt.Println("ERR: ", devices[i].Devpath(), err)
+		}
 	}
 }
 
