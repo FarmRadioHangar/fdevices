@@ -226,7 +226,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600}
+		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: time.Second}
 		conn := &Conn{device: cfg}
 		err := conn.Open()
 		if err != nil {
@@ -273,12 +273,15 @@ func NewModem(ctx context.Context, c *Conn) (*db.Dongle, error) {
 func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 	ich := time.After(duration)
 	tk := time.NewTicker(time.Second)
+	start := 0
 	defer tk.Stop()
 	for {
 		select {
 		case <-ich:
 			return c.Run(cmd)
 		case <-tk.C:
+			fmt.Println(start)
+			start++
 			rst, err := c.Run(cmd)
 			if err != nil {
 				fmt.Printf("%s %s \n %v\n", cmd, c.device.Name, err)
@@ -333,7 +336,6 @@ func getIMSI(c *Conn) (string, error) {
 	}
 	im := string(i)
 	if !isNumber(im) {
-		fmt.Printf("GETTING IMSI \n%s\n", string(o))
 		return "", errors.New("IMSI not found")
 	}
 	return im, nil
