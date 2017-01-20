@@ -226,7 +226,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 10 * time.Second}
+		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 5 * time.Second}
 		modem, err := NewModem(ctx, cfg)
 		if err != nil {
 			return nil, err
@@ -244,13 +244,14 @@ func getttyNum(tty string) (int, error) {
 
 func NewModem(ctx context.Context, cfg serial.Config) (*db.Dongle, error) {
 	m := &db.Dongle{}
-	imei, ati, err := getIMEI(cfg)
-	if err != nil {
-		return nil, err
-	}
 	imsi, err := getIMSI(cfg)
 	if err != nil {
 		fmt.Println(err)
+	}
+	imei, ati, err := getIMEI(cfg)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
 	}
 	m.IMEI = imei
 	m.ATI = ati
