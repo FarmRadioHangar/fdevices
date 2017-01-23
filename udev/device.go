@@ -124,7 +124,7 @@ func (m *Manager) Startup(ctx context.Context) {
 	for i := 0; i < len(devices); i++ {
 		err := m.AddDevice(ctx, devices[i])
 		if err != nil {
-			fmt.Println("ERR: ", devices[i].Devpath(), err)
+			//fmt.Println("ERR: ", devices[i].Devpath(), err)
 		}
 	}
 }
@@ -148,6 +148,7 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	if err != nil {
 		return err
 	}
+	//fmt.Println(*modem)
 	modem.Properties = d.Properties()
 	e := &events.Event{Name: "add", Data: modem}
 	_, err = db.GetSymlinkCandidate(m.db, modem.IMEI)
@@ -271,15 +272,15 @@ func NewModem(ctx context.Context, cfg serial.Config) (*db.Dongle, error) {
 func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
 	ich := time.After(duration)
 	tk := time.NewTicker(time.Second)
-	start := 0
+	//start := 0
 	defer tk.Stop()
 	for {
 		select {
 		case <-ich:
 			return c.Run(cmd)
 		case <-tk.C:
-			fmt.Println(start)
-			start++
+			//fmt.Println(start)
+			//start++
 			rst, err := c.Run(cmd)
 			if err != nil {
 				fmt.Printf("%s %s \n %v\n", cmd, c.device.Name, err)
@@ -303,29 +304,34 @@ func getIMEI(cfg serial.Config) (string, string, error) {
 		return "", "", err
 	}
 	ati := string(o)
-	im := clearIMEI(string(o))
-	if !isNumber(im) {
+	im, ok := getIMEINumber(ati)
+	if !ok {
+		_, ok = getIMSINumber(o)
+		if ok {
+			return getIMEI(cfg)
+		}
 		return "", "", errors.New("IMEI not found")
 	}
 	return im, ati, nil
 }
 
-func clearIMEI(src string) string {
+func getIMEINumber(src string) (string, bool) {
 	src = strings.TrimSpace(src)
 	if src == "" {
-		return src
+		return src, false
 	}
 	im := "IMEI:"
 	gap := "+GCAP"
 	i := strings.Index(src, im)
 	if i == -1 {
-		return ""
+		return "", false
 	}
 	g := strings.Index(src, gap)
 	if i == -1 {
-		return ""
+		return "", false
 	}
-	return strings.TrimSpace(src[i+len(im) : g])
+	n := strings.TrimSpace(src[i+len(im) : g])
+	return n, isNumber(n)
 }
 
 func getIMSI(cfg serial.Config) (string, error) {
@@ -339,16 +345,27 @@ func getIMSI(cfg serial.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	i, err := cleanResult(o)
-	if err != nil {
-		return "", err
-	}
-	im := string(i)
-	if !isNumber(im) {
+	im, ok := getIMSINumber(o)
+	if !ok {
+		_, ok = getIMEINumber(string(o))
+		if ok {
+			return getIMSI(cfg)
+		}
 		return "", errors.New("IMSI not found")
 	}
 	return im, nil
+}
+
+func getIMSINumber(src []byte) (string, bool) {
+	i, err := cleanResult(src)
+	if err != nil {
+		return "", false
+	}
+	im := string(i)
+	if !isNumber(im) {
+		return "", false
+	}
+	return im, true
 }
 
 func isNumber(src string) bool {
@@ -448,7 +465,7 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 		return nil, err
 	}
 	buf = bytes.TrimSpace(buf)
-	fmt.Printf("CMD %s: TTY: %s ==> %s\n", cmd, c.device.Name, string(buf))
+	//fmt.Printf("CMD %s: TTY: %s ==> %s\n", cmd, c.device.Name, string(buf))
 	if !bytes.Contains(buf, []byte("OK")) {
 		return nil, errors.New(string(buf))
 	}
