@@ -231,7 +231,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 10 * time.Second}
+		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 5 * time.Second}
 		modem, err := NewModem(ctx, cfg)
 		if err != nil {
 			return nil, err
