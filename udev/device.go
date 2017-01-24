@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -230,7 +231,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
 	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 5 * time.Second}
+		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 10 * time.Second}
 		modem, err := NewModem(ctx, cfg)
 		if err != nil {
 			return nil, err
@@ -347,10 +348,6 @@ func getIMSI(cfg serial.Config) (string, error) {
 	}
 	im, ok := getIMSINumber(o)
 	if !ok {
-		_, ok = getIMEINumber(string(o))
-		if ok {
-			return getIMSI(cfg)
-		}
 		return "", errors.New("IMSI not found")
 	}
 	return im, nil
@@ -459,8 +456,14 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	buf := make([]byte, 128)
-	_, err = c.Read(buf)
+	/*
+		buf := make([]byte, 128)
+		_, err = c.Read(buf)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	buf, err := ioutil.ReadAll(c)
 	if err != nil {
 		return nil, err
 	}
