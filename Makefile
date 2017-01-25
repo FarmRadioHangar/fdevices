@@ -1,4 +1,4 @@
-VERSION=0.1.3
+VERSION=0.1.4
 NAME=devices_$(VERSION)
 OUT_DIR=bin/linux_arm/devices_$(VERSION)
 
