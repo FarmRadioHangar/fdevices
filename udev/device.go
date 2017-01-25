@@ -102,10 +102,13 @@ func (m *Manager) Run(ctx context.Context) error {
 func (m *Manager) RemoveDevice(ctx context.Context, dpath string) error {
 	d, err := db.GetDongle(m.db, dpath)
 	if err != nil {
-		return err
+		return nil
 	}
 	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
 	if err != nil {
+		e := &events.Event{Name: "remove", Data: d}
+		m.stream.Send(e)
+		fmt.Println("removed donge", d.IMEI)
 		return db.RemoveDongle(m.db, d)
 	}
 	err = db.RemoveDongle(m.db, c)
