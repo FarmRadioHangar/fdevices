@@ -1,12 +1,12 @@
 VERSION=0.1.4
-NAME=devices_$(VERSION)
-OUT_DIR=bin/linux_arm/devices_$(VERSION)
+NAME=fdevices_$(VERSION)
+OUT_DIR=bin/linux_arm/$(NAME)
 
-all:$(OUT_DIR)/devices
+all:$(OUT_DIR)/fdevices
 $(OUT_DIR)/devices:main.go
 	gox  \
 		-output "bin/{{.Dir}}/{{.OS}}_{{.Arch}}/{{.Dir}}_$(VERSION)/{{.Dir}}" \
-		-osarch "linux/arm" github.com/FarmRadioHangar/devices
+		-osarch "linux/arm" github.com/FarmRadioHangar/fdevices
 
 tar:
-	cd bin/ && tar -zcvf devices_$(VERSION).tar.gz  devices/
+	cd bin/ && tar -zcvf $(NAME).tar.gz  devices/
