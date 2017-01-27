@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/FarmRadioHangar/devices/db"
-	"github.com/FarmRadioHangar/devices/events"
-	"github.com/FarmRadioHangar/devices/udev"
-	"github.com/FarmRadioHangar/devices/web"
+	"github.com/FarmRadioHangar/fdevices/db"
+	"github.com/FarmRadioHangar/fdevices/events"
+	"github.com/FarmRadioHangar/fdevices/udev"
+	"github.com/FarmRadioHangar/fdevices/web"
 	"github.com/urfave/cli"
 )
 

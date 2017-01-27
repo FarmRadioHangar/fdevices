@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/FarmRadioHangar/devices/db"
-	"github.com/FarmRadioHangar/devices/events"
+	"github.com/FarmRadioHangar/fdevices/db"
+	"github.com/FarmRadioHangar/fdevices/events"
 	"github.com/gernest/alien"
 	"github.com/gorilla/websocket"
 )

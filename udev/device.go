@@ -17,8 +17,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/FarmRadioHangar/devices/db"
-	"github.com/FarmRadioHangar/devices/events"
+	"github.com/FarmRadioHangar/fdevices/db"
+	"github.com/FarmRadioHangar/fdevices/events"
 	"github.com/jochenvg/go-udev"
 	"github.com/tarm/serial"
 )
