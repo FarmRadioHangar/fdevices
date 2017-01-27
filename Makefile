@@ -7,4 +7,4 @@ build:
 		-osarch "linux/arm" github.com/FarmRadioHangar/fdevices
 
 tar:
-	cd bin/ && tar -zcvf $(NAME).tar.gz  devices/
+	cd bin/ && tar -zcvf $(NAME).tar.gz  fdevices/
