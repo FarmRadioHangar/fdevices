@@ -347,6 +347,9 @@ func getIMSI(cfg serial.Config) (string, error) {
 	defer c.Close()
 	o, err := c.Run("AT+CIMI")
 	if err != nil {
+		if strings.Contains(err.Error(), "busy") {
+			return getIMSI(cfg)
+		}
 		return "", err
 	}
 	im, ok := getIMSINumber(o)
