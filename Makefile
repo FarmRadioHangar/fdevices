@@ -3,8 +3,11 @@ NAME=fdevices_$(VERSION)
 
 build:
 	gox  \
-		-output "bin/{{.Dir}}/{{.OS}}_{{.Arch}}/{{.Dir}}_$(VERSION)/{{.Dir}}" \
+		-output "bin/{{.Dir}}_$(VERSION)/{{.OS}}_{{.Arch}}/{{.Dir}}" \
 		-osarch "linux/arm" github.com/FarmRadioHangar/fdevices
 
-tar:
-	cd bin/ && tar -zcvf $(NAME).tar.gz  fdevices/
+tar: prep
+	cd bin/ && tar -zcvf $(NAME).tar.gz  fdevices_$(VERSION)/
+
+prep:
+	cp fdevices.service bin/fdevices_$(VERSION)/
