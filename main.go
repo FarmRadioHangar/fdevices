@@ -11,12 +11,13 @@ import (
 	"github.com/FarmRadioHangar/fdevices/events"
 	"github.com/FarmRadioHangar/fdevices/udev"
 	"github.com/FarmRadioHangar/fdevices/web"
+	"github.com/okzk/sdnotify"
 	"github.com/urfave/cli"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "0.1.6"
+	app.Version = "0.1.7"
 	app.Usage = "Streams realtime events about devices (Dongles)"
 	app.Commands = []cli.Command{
 		{
@@ -56,5 +57,6 @@ func Server(cxt *cli.Context) error {
 	w := web.New(ql, s)
 	port := cxt.Int("port")
 	fmt.Println("listening on port :", port)
+	sdnotify.SdNotifyReady()
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), w)
 }
