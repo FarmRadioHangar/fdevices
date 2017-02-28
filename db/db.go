@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 	// load ql drier
+	"github.com/FarmRadioHangar/fdevices/log"
 	_ "github.com/cznic/ql/driver"
 )
 
@@ -287,14 +288,31 @@ func GetDongleByIMEI(db *sql.DB, imei string) (*Dongle, error) {
 	}
 	return d, nil
 }
+
+// GetSymlinkCandidate returns the dongle with the lowest tty number
 func GetSymlinkCandidate(db *sql.DB, imei string) (*Dongle, error) {
-	query := `select  min(tty) from dongles where imei=$1&&imsi!="" `
+	query := `select  min(tty) from dongles where imei=$1 `
 	var tty int
 	err := db.QueryRow(query, imei).Scan(&tty)
 	if err != nil {
-
 		return nil, err
 	}
 	path := fmt.Sprintf("/dev/ttyUSB%d", tty)
 	return GetDongle(db, path)
+}
+
+// DongleExists return true when the dongle DongleExists
+func DongleExists(db *sql.DB, modem *Dongle) bool {
+	query := `select  count(*) from dongles where imei=$1&&imsi=$2&&path=$3 `
+	var count int
+	err := db.QueryRow(query,
+		modem.IMEI,
+		modem.IMSI,
+		modem.Path,
+	).Scan(&count)
+	if err != nil {
+		log.Error(err.Error())
+		return false
+	}
+	return count > 0
 }

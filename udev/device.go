@@ -139,12 +139,14 @@ func (m *Manager) Startup(ctx context.Context) {
 		if isUSB(d.Devpath()) {
 			short := filepath.Join("/dev", filepath.Base(d.Devpath()))
 			log.Info("found %s", short)
+			log.Divider()
 			err := m.AddDevice(ctx, d)
 			if err != nil {
 				log.Error("%s : %s", short, err.Error())
 			} else {
 				log.Info("%s OK", short)
 			}
+			log.Divider()
 		}
 	}
 }
@@ -175,14 +177,22 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	}
 	modem.Properties = d.Properties()
 	e := &events.Event{Name: "add", Data: modem}
-	_, err = db.GetSymlinkCandidate(m.db, modem.IMEI)
+	candidate, err := db.GetSymlinkCandidate(m.db, modem.IMEI)
 	if err != nil {
-		_, err = db.GetDongleByIMEI(m.db, modem.IMEI)
-		if err != nil {
-			m.stream.Send(e)
+		if db.DongleExists(m.db, modem) {
+			log.Info("this dongle already exists")
+			return nil
 		}
+	} else if candidate.TTY < modem.TTY {
+		log.Info("a better candidate already exist at %s ", candidate.Path)
+		return nil
 	}
-	err = db.CreateDongle(m.db, modem)
+	m.stream.Send(e)
+	return m.createAdnSym(modem)
+}
+
+func (m *Manager) createAdnSym(modem *db.Dongle) error {
+	err := db.CreateDongle(m.db, modem)
 	if err != nil {
 		fmt.Println(err)
 	}
