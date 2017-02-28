@@ -187,18 +187,19 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 		log.Info("a better candidate already exist at %s ", candidate.Path)
 		return nil
 	}
+	log.Info("found dongle imei:%s imsi:%s path:%s",
+		modem.IMEI, modem.IMSI, modem.Path,
+	)
 	m.stream.Send(e)
 	return m.createAdnSym(modem)
 }
 
+// creates a dongle and symlinks it
 func (m *Manager) createAdnSym(modem *db.Dongle) error {
 	err := db.CreateDongle(m.db, modem)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	log.Info("found dongle imei:%s imsi:%s path:%s",
-		modem.IMEI, modem.IMSI, modem.Path,
-	)
 	go m.Symlink(modem)
 	return nil
 }
