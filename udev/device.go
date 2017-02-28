@@ -19,6 +19,7 @@ import (
 
 	"github.com/FarmRadioHangar/fdevices/db"
 	"github.com/FarmRadioHangar/fdevices/events"
+	"github.com/FarmRadioHangar/fdevices/log"
 	"github.com/jochenvg/go-udev"
 	"github.com/tarm/serial"
 )
@@ -50,13 +51,13 @@ func New(db *sql.DB, s *events.Stream) *Manager {
 	return &Manager{stream: s, db: db}
 }
 
-// Init initializes the manager. This involves creating a new goroutine to watch
+// Run  initializes the manager. This involves creating a new goroutine to watch
 // over the changes detected by udev for any device interaction with the system.
 //
 // The only interesting device actions are add and reomove for adding and
 // removing devices respctively.
-
 func (m *Manager) Run(ctx context.Context) error {
+	log.Info("running the manager")
 	u := udev.Udev{}
 	monitor := u.NewMonitorFromNetlink("udev")
 	monitor.FilterAddMatchTag("systemd")
@@ -73,32 +74,37 @@ func (m *Manager) Run(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				done <- struct{}{}
+				log.Info("stopping manager")
 				break stop
 			}
 		}
 		wg.Done()
 	}()
 	go func() {
-		fmt.Println("starting listening for events")
+		log.Info("starting listening for events")
 		for d := range ch {
 			dpath := filepath.Join("/dev", filepath.Base(d.Devpath()))
 			switch d.Action() {
 			case "add":
+				log.Info("received add event for %s", dpath)
 				m.AddDevice(ctx, d)
 			case "remove":
+				log.Info("received remove event for %s", dpath)
 				err := m.RemoveDevice(ctx, dpath)
 				if err != nil {
-					fmt.Println(err)
+					log.Error(err.Error())
 				}
 			}
 		}
 		wg.Done()
 	}()
 	wg.Wait()
+	log.Info("exit running manager")
 	return nil
 
 }
 
+// RemoveDevice removes the dongle which has been tracked by the manager
 func (m *Manager) RemoveDevice(ctx context.Context, dpath string) error {
 	d, err := db.GetDongle(m.db, dpath)
 	if err != nil {
@@ -108,17 +114,20 @@ func (m *Manager) RemoveDevice(ctx context.Context, dpath string) error {
 	if err != nil {
 		e := &events.Event{Name: "remove", Data: d}
 		m.stream.Send(e)
-		fmt.Println("removed donge", d.IMEI)
+		log.Info("removed dongle with imei %s", d.IMEI)
 		return db.RemoveDongle(m.db, d)
 	}
 	err = db.RemoveDongle(m.db, c)
 	if err != nil {
 		return err
 	}
-	fmt.Println("removed donge", c.IMEI)
+	log.Info("successful removed gongle with imei %s", c.IMEI)
 	m.unlink(c)
 	return nil
 }
+
+// Startup starts the manager for the first time. This deals with devices
+// that are already in the system by the time the manager was started
 func (m *Manager) Startup(ctx context.Context) {
 	u := udev.Udev{}
 	e := u.NewEnumerate()
@@ -126,11 +135,23 @@ func (m *Manager) Startup(ctx context.Context) {
 	e.AddMatchTag("systemd")
 	devices, _ := e.Devices()
 	for i := 0; i < len(devices); i++ {
-		err := m.AddDevice(ctx, devices[i])
-		if err != nil {
-			//fmt.Println("ERR: ", devices[i].Devpath(), err)
+		d := devices[i]
+		if isUSB(d.Devpath()) {
+			short := filepath.Join("/dev", filepath.Base(d.Devpath()))
+			log.Info("found %s", short)
+			err := m.AddDevice(ctx, d)
+			if err != nil {
+				log.Error("%s : %s", short, err.Error())
+			} else {
+				log.Info("%s OK", short)
+			}
 		}
 	}
+}
+
+func isUSB(name string) bool {
+	name = filepath.Base(name)
+	return strings.Contains(name, "ttyUSB")
 }
 
 // AddDevice adds device name to the manager
@@ -152,7 +173,6 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Println(*modem)
 	modem.Properties = d.Properties()
 	e := &events.Event{Name: "add", Data: modem}
 	_, err = db.GetSymlinkCandidate(m.db, modem.IMEI)
@@ -166,36 +186,39 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("found dongle imei:%s imsi:%s path:%s \n",
+	log.Info("found dongle imei:%s imsi:%s path:%s",
 		modem.IMEI, modem.IMSI, modem.Path,
 	)
 	go m.Symlink(modem)
 	return nil
 }
+
 func (m *Manager) symlink(d *db.Dongle) {
 	n := fmt.Sprintf("/dev/%s.imei", d.IMEI)
 	_ = syscall.Unlink(n)
 	err := os.Symlink(d.Path, n)
 	if err != nil {
-		fmt.Printf("devices-symlinks :  %v \n", err)
+		log.Error("symlink :  %v", err)
 		return
 	}
-	fmt.Printf("device-symlink: %s --> %s\n", n, d.Path)
+	log.Info("symlink: %s --> %s", n, d.Path)
 	i := fmt.Sprintf("/dev/%s.imsi", d.IMSI)
 	_ = syscall.Unlink(i)
 	err = os.Symlink(d.Path, i)
 	if err != nil {
-		fmt.Printf("devices-symlinks :  %v \n", err)
+		log.Error("ymlinks :  %v", err)
+		_ = syscall.Unlink(n)
+		return
 	}
 	d.IsSymlinked = true
 	err = db.UpdateDongle(m.db, d)
 	if err != nil {
-		fmt.Printf("ERROR; %v \n", err)
+		log.Error(err.Error())
 	} else {
 		e := &events.Event{Name: "update", Data: d}
 		m.stream.Send(e)
 	}
-	fmt.Printf("device-symlink: %s --> %s\n", i, d.Path)
+	log.Info("symlink: %s --> %s", i, d.Path)
 }
 
 func (m *Manager) unlink(d *db.Dongle) {
@@ -208,6 +231,28 @@ func (m *Manager) unlink(d *db.Dongle) {
 	e := &events.Event{Name: "remove", Data: d}
 	m.stream.Send(e)
 }
+
+//ClearSymlinks remove all symlinks that wrere created by this aoolication
+func ClearSymlinks() error {
+	return filepath.Walk("/dev", clearSymlink)
+
+}
+
+func clearSymlink(path string, info os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return nil
+	}
+	e := filepath.Ext(path)
+	if e == "imei" || e == "imsi" {
+		log.Info("unlink: %s", e)
+		return syscall.Unlink(e)
+	}
+	return nil
+}
+
 func (m *Manager) Symlink(d *db.Dongle) {
 	if d.IMSI == "" {
 		return
@@ -221,7 +266,7 @@ func (m *Manager) Symlink(d *db.Dongle) {
 	}
 }
 
-//FindDongle thic=s checks if the udev Device is a donge. We are only interested
+//FindModem thic=s checks if the udev Device is a donge. We are only interested
 //in dongle that we can communicate with via serial port.
 //
 // For a plugged in 3g dongle, three devices are seen by udev. They are
@@ -233,15 +278,16 @@ func (m *Manager) Symlink(d *db.Dongle) {
 // the tty.
 func FindModem(ctx context.Context, d *udev.Device) (*db.Dongle, error) {
 	name := filepath.Join("/dev", filepath.Base(d.Devpath()))
-	if strings.Contains(name, "ttyUSB") {
-		cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 5 * time.Second}
-		modem, err := NewModem(ctx, cfg)
-		if err != nil {
-			return nil, err
-		}
-		return modem, nil
+	log.Info("looking for modem at %s", name)
+	start := time.Now()
+	cfg := serial.Config{Name: name, Baud: 9600, ReadTimeout: 5 * time.Second}
+	modem, err := NewModem(ctx, cfg)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("not a dongle")
+	end := time.Now()
+	log.Info("found it in %s", end.Sub(start).String())
+	return modem, nil
 }
 
 func getttyNum(tty string) (int, error) {
@@ -250,6 +296,7 @@ func getttyNum(tty string) (int, error) {
 	return strconv.Atoi(b)
 }
 
+// NewModem talks to the device to determine if the device is a dongle
 func NewModem(ctx context.Context, cfg serial.Config) (*db.Dongle, error) {
 	m := &db.Dongle{}
 	imsi, err := getIMSI(cfg)
