@@ -267,6 +267,7 @@ func clearSymlink(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+// Symlink creates symlink for the dongle. The symlinks are for both imei and imsi.
 func (m *Manager) Symlink(d *db.Dongle) error {
 	if d.IMSI == "" {
 		return nil
