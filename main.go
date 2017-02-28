@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/FarmRadioHangar/fdevices/db"
 	"github.com/FarmRadioHangar/fdevices/events"
+	"github.com/FarmRadioHangar/fdevices/log"
 	"github.com/FarmRadioHangar/fdevices/udev"
 	"github.com/FarmRadioHangar/fdevices/web"
 	"github.com/okzk/sdnotify"
@@ -36,10 +36,12 @@ func main() {
 	}
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err.Error())
+		os.Exit(1)
 	}
 }
 
+// Server starts a service that manages the Dongles
 func Server(cxt *cli.Context) error {
 	s := events.NewStream(1000)
 	ql, err := db.DB()
@@ -48,15 +50,29 @@ func Server(cxt *cli.Context) error {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	s.Start(ctx)
+	log.Info("removing all symlinks managed by this application")
+	err = udev.ClearSymlinks()
+	if err != nil {
+		return err
+	}
+	log.Info("OK")
+
 	m := udev.New(ql, s)
 	m.Startup(ctx)
 	go m.Run(ctx)
 
-	defer cancel()
 	w := web.New(ql, s)
 	port := cxt.Int("port")
-	fmt.Println("listening on port :", port)
-	sdnotify.SdNotifyReady()
+	log.Info("listening on port :%d", port)
+	log.Info("sending systeemd notify ready signal")
+	err = sdnotify.SdNotifyReady()
+	if err != nil {
+		// return err
+		log.Error(err.Error())
+	} else {
+		log.Info("OK")
+	}
 	return http.ListenAndServe(fmt.Sprintf(":%d", port), w)
 }

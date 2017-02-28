@@ -246,9 +246,9 @@ func clearSymlink(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 	e := filepath.Ext(path)
-	if e == "imei" || e == "imsi" {
-		log.Info("unlink: %s", e)
-		return syscall.Unlink(e)
+	if e == ".imei" || e == ".imsi" {
+		log.Info("unlink: %s", path)
+		return syscall.Unlink(path)
 	}
 	return nil
 }
