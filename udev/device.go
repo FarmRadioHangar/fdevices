@@ -30,6 +30,9 @@ var modemCommands = struct {
 	"AT+GSN", "AT+CIMI",
 }
 
+// MaxAttempt is the maximum numbet of attempts to find imsi and imsi
+const MaxAttempt = 3
+
 // Manager manages devices that are plugged into the system. It supports auto
 // detection of devices.
 //
@@ -315,13 +318,12 @@ func getttyNum(tty string) (int, error) {
 // NewModem talks to the device to determine if the device is a dongle
 func NewModem(ctx context.Context, cfg serial.Config) (*db.Dongle, error) {
 	m := &db.Dongle{}
-	imsi, err := getIMSI(cfg)
+	imsi, err := findIMSI(cfg, MaxAttempt)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err.Error())
 	}
-	imei, ati, err := getIMEI(cfg)
+	imei, ati, err := findIMEI(cfg, MaxAttempt)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	m.IMEI = imei
@@ -334,29 +336,6 @@ func NewModem(ctx context.Context, cfg serial.Config) (*db.Dongle, error) {
 	}
 	m.TTY = i
 	return m, nil
-}
-
-func mustExec(duration time.Duration, c *Conn, cmd string) ([]byte, error) {
-	ich := time.After(duration)
-	tk := time.NewTicker(time.Second)
-	//start := 0
-	defer tk.Stop()
-	for {
-		select {
-		case <-ich:
-			return c.Run(cmd)
-		case <-tk.C:
-			//fmt.Println(start)
-			//start++
-			rst, err := c.Run(cmd)
-			if err != nil {
-				fmt.Printf("%s %s \n %v\n", cmd, c.device.Name, err)
-				continue
-			}
-			return rst, nil
-		}
-
-	}
 }
 
 func getIMEI(cfg serial.Config) (string, string, error) {
@@ -373,10 +352,6 @@ func getIMEI(cfg serial.Config) (string, string, error) {
 	ati := string(o)
 	im, ok := getIMEINumber(ati)
 	if !ok {
-		_, ok = getIMSINumber(o)
-		if ok {
-			return getIMEI(cfg)
-		}
 		return "", "", errors.New("IMEI not found")
 	}
 	return im, ati, nil
@@ -401,6 +376,38 @@ func getIMEINumber(src string) (string, bool) {
 	return n, isNumber(n)
 }
 
+func findIMSI(cfg serial.Config, try int) (imsi string, err error) {
+	var count int
+	for count <= try {
+		log.Info("trying to find imsi %d attempt", count)
+		imsi, err = getIMSI(cfg)
+		if err != nil {
+			count++
+			log.Info(err.Error())
+			continue
+		}
+		log.Info("OK")
+		return
+	}
+	return
+}
+
+func findIMEI(cfg serial.Config, try int) (imei, ati string, err error) {
+	var count int
+	for count <= try {
+		log.Info("trying to find imei %d attempt", count)
+		imei, ati, err = getIMEI(cfg)
+		if err != nil {
+			count++
+			log.Info(err.Error())
+			continue
+		}
+		log.Info("OK")
+		return
+	}
+	return
+}
+
 func getIMSI(cfg serial.Config) (string, error) {
 	c := &Conn{device: cfg}
 	err := c.Open()
@@ -410,9 +417,6 @@ func getIMSI(cfg serial.Config) (string, error) {
 	defer c.Close()
 	o, err := c.Run("AT+CIMI")
 	if err != nil {
-		if strings.Contains(err.Error(), "busy") {
-			return getIMSI(cfg)
-		}
 		return "", err
 	}
 	im, ok := getIMSINumber(o)
