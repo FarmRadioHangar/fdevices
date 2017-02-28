@@ -191,6 +191,10 @@ func (m *Manager) addDevice(ctx context.Context, d *udev.Device) error {
 		modem.IMEI, modem.IMSI, modem.Path,
 	)
 	m.stream.Send(e)
+	if modem.IMSI == "" {
+		log.Info("skipping processing dongle without imsi")
+		return nil
+	}
 	return m.createAdnSym(modem)
 }
 
@@ -200,8 +204,7 @@ func (m *Manager) createAdnSym(modem *db.Dongle) error {
 	if err != nil {
 		return err
 	}
-	go m.Symlink(modem)
-	return nil
+	return m.Symlink(modem)
 }
 
 func (m *Manager) symlink(d *db.Dongle) {
@@ -264,17 +267,18 @@ func clearSymlink(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-func (m *Manager) Symlink(d *db.Dongle) {
+func (m *Manager) Symlink(d *db.Dongle) error {
 	if d.IMSI == "" {
-		return
+		return nil
 	}
 	c, err := db.GetSymlinkCandidate(m.db, d.IMEI)
 	if err != nil {
-		return
+		return err
 	}
 	if !c.IsSymlinked {
 		m.symlink(c)
 	}
+	return nil
 }
 
 //FindModem thic=s checks if the udev Device is a donge. We are only interested
