@@ -1,4 +1,4 @@
-VERSION=0.1.7
+VERSION=0.1.8
 NAME=fdevices_$(VERSION)
 
 build:
@@ -11,3 +11,6 @@ tar: prep
 
 prep:
 	cp fdevices.service bin/fdevices_$(VERSION)/
+
+deps:
+	go get github.com/mitchellh/gox
