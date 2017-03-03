@@ -23,3 +23,4 @@ fdevices
 *.exe
 *.test
 *.prof
+bin
