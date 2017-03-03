@@ -69,7 +69,6 @@ func Server(cxt *cli.Context) error {
 	log.Info("sending systeemd notify ready signal")
 	err = sdnotify.SdNotifyReady()
 	if err != nil {
-		// return err
 		log.Error(err.Error())
 	} else {
 		log.Info("OK")
