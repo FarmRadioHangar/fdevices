@@ -2,13 +2,14 @@
 [Service]
 Type=simple
 #Type=notify
+Environment="FDEVICES_MODE=debug"
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=fdevices
 ExecStart=/usr/local/bin/fdevices s
 Restart=on-failure
 RestartSec=3
-Environment="FDEVICES_MODE=debug"
+
 
 [Install]
 WantedBy=multi-user.target
