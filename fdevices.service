@@ -8,6 +8,7 @@ SyslogIdentifier=fdevices
 ExecStart=/usr/local/bin/fdevices s
 Restart=on-failure
 RestartSec=3
+Environment="FDEVICES_MODE=debug"
 
 [Install]
 WantedBy=multi-user.target
