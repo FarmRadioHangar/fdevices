@@ -529,19 +529,11 @@ func (c *Conn) Exec(cmd string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	/*
-		buf := make([]byte, 128)
-		_, err = c.Read(buf)
-		if err != nil {
-			return nil, err
-		}
-	*/
 	buf, err := ioutil.ReadAll(c)
 	if err != nil {
 		return nil, err
 	}
 	buf = bytes.TrimSpace(buf)
-	//fmt.Printf("CMD %s: TTY: %s ==> %s\n", cmd, c.device.Name, string(buf))
 	if !bytes.Contains(buf, []byte("OK")) {
 		return nil, errors.New(string(buf))
 	}
