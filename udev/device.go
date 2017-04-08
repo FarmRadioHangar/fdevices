@@ -167,6 +167,9 @@ func isUSB(name string) bool {
 //
 // TODO: comeup with a proper way to identify modems
 func (m *Manager) AddDevice(ctx context.Context, d *udev.Device) error {
+	if !isUSB(d.Devpath()) {
+		return nil
+	}
 	err := m.addDevice(ctx, d)
 	if err != nil {
 		return err
