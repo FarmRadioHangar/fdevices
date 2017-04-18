@@ -1,15 +1,16 @@
 
 [Service]
-Type=simple
-#Type=notify
+Type=notify
 Environment="FDEVICES_MODE=debug"
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=fdevices
+# fdevices not working if started right away
+ExecStartPre=/usr/bin/sleep 10
 ExecStart=/usr/local/bin/fdevices s
 Restart=on-failure
 RestartSec=3
-
+TimeoutStartSec=0
 
 [Install]
 WantedBy=multi-user.target
